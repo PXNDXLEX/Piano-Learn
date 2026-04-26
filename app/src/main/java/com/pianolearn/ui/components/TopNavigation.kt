@@ -6,7 +6,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.LibraryMusic
+import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -49,7 +49,7 @@ fun TopNavigation(
         // Action Buttons
         Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
             IconButton(onClick = onOpenLibrary) {
-                Icon(Icons.Default.LibraryMusic, contentDescription = "MIDI Library", tint = Color.White)
+                Icon(Icons.Default.List, contentDescription = "MIDI Library", tint = Color.White)
             }
             IconButton(onClick = { showTooltip = true }) {
                 Icon(Icons.Default.Info, contentDescription = "Help", tint = Color.White)

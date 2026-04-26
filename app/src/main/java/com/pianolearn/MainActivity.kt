@@ -73,9 +73,12 @@ fun PianoAppScreen(
     onThemeToggle: () -> Unit
 ) {
     var activeNotes by remember { mutableStateOf(setOf<Int>()) }
+    var fallingActiveNotes by remember { mutableStateOf(setOf<Int>()) }
     var currentInstrument by remember { mutableStateOf("Classic Piano") }
     var currentTimeMs by remember { mutableStateOf(0L) }
     var isPlaying by remember { mutableStateOf(false) }
+    var startOctave by remember { mutableStateOf(3) }
+    var numOctaves by remember { mutableStateOf(2) }
 
     // Mock falling notes for demonstration
     val mockNotes = remember {
@@ -91,6 +94,7 @@ fun PianoAppScreen(
     LaunchedEffect(isPlaying) {
         if (isPlaying) {
             val startTime = System.currentTimeMillis() - currentTimeMs
+            var previousActive = setOf<Int>()
             while (true) {
                 currentTimeMs = System.currentTimeMillis() - startTime
                 // Highlight keys that are currently "hit" by falling notes
@@ -98,8 +102,12 @@ fun PianoAppScreen(
                     currentTimeMs >= it.startTime && currentTimeMs <= (it.startTime + it.duration)
                 }.map { it.noteIndex }.toSet()
                 
-                // Add user pressed notes
-                // activeNotes = activeNotes + currentlyActive (Simplified logic)
+                // Play sound for newly hit notes
+                val newlyActive = currentlyActive - previousActive
+                newlyActive.forEach { soundManager.playNote(it) }
+                
+                fallingActiveNotes = currentlyActive
+                previousActive = currentlyActive
                 
                 delay(16) // ~60fps
             }
@@ -110,10 +118,27 @@ fun PianoAppScreen(
         .fillMaxSize()
         .background(MaterialTheme.colorScheme.background)) {
         
-        // Add a simple top bar row for Theme toggle
-        Row(modifier = Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surface).padding(horizontal = 8.dp), horizontalArrangement = Arrangement.End) {
+        // Top bar for Theme toggle and Range controls
+        Row(
+            modifier = Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surface).padding(horizontal = 8.dp), 
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text("Octave:", color = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(end = 4.dp))
+                IconButton(onClick = { if (startOctave > 1) startOctave-- }) { Text("-", color = MaterialTheme.colorScheme.primary) }
+                Text(startOctave.toString(), color = MaterialTheme.colorScheme.onSurface)
+                IconButton(onClick = { if (startOctave < 7) startOctave++ }) { Text("+", color = MaterialTheme.colorScheme.primary) }
+                
+                Spacer(modifier = Modifier.width(16.dp))
+                
+                Text("Range:", color = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(end = 4.dp))
+                IconButton(onClick = { if (numOctaves > 1) numOctaves-- }) { Text("-", color = MaterialTheme.colorScheme.primary) }
+                Text(numOctaves.toString(), color = MaterialTheme.colorScheme.onSurface)
+                IconButton(onClick = { if (numOctaves < 4) numOctaves++ }) { Text("+", color = MaterialTheme.colorScheme.primary) }
+            }
             TextButton(onClick = onThemeToggle) {
-                Text(if (isDarkTheme) "Switch to Light Mode" else "Switch to Dark Mode", color = MaterialTheme.colorScheme.primary)
+                Text(if (isDarkTheme) "Light Mode" else "Dark Mode", color = MaterialTheme.colorScheme.primary)
             }
         }
 
@@ -131,16 +156,16 @@ fun PianoAppScreen(
             MidiVisualizer(
                 fallingNotes = mockNotes,
                 currentTime = currentTimeMs,
-                startOctave = 3,
-                numOctaves = 2
+                startOctave = startOctave,
+                numOctaves = numOctaves
             )
         }
 
         PianoKeyboard(
             modifier = Modifier.height(150.dp),
-            startOctave = 3,
-            numOctaves = 2,
-            activeNotes = activeNotes,
+            startOctave = startOctave,
+            numOctaves = numOctaves,
+            activeNotes = activeNotes + fallingActiveNotes,
             onNotePressed = { note ->
                 activeNotes = activeNotes + note
                 soundManager.playNote(note)
